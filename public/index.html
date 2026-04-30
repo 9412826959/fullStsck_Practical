@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        .form-group {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input {
+            display: block;
+            margin: 5px 0;
+            padding: 6px;
+            width: 250px;
+        }
+
+        button {
+            padding: 6px 12px;
+            cursor: pointer;
+            border: none;
+            color: white;
+        }
+
+        /* colored buttons */
+        .add-btn {
+            background-color: green;
+        }
+
+        .delete-btn {
+            background-color: red;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Add Student</h2>
+
+<div class="form-group">
+    <input id="name" placeholder="Name">
+    <input id="roll" placeholder="Roll Number">
+    <input id="branch" placeholder="Branch">
+    <input id="marks" type="number" placeholder="Marks (0-100)">
+    <button class="add-btn" onclick="addStudent()">Add</button>
+</div>
+
+<h2>Students List</h2>
+<ul id="list"></ul>
+
+<script>
+async function fetchStudents() {
+    const res = await fetch("/api/students");
+    const data = await res.json();
+
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    data.forEach(s => {
+        list.innerHTML += `
+            <li>
+                ${s.name} (${s.rollNumber}) - ${s.marks}
+                <button class="delete-btn" onclick="deleteStudent('${s._id}')">Delete</button>
+            </li>
+        `;
+    });
+}
+
+async function addStudent() {
+    const name = document.getElementById("name").value.trim();
+    const rollNumber = document.getElementById("roll").value.trim();
+    const branch = document.getElementById("branch").value.trim();
+    const marksValue = document.getElementById("marks").value;
+
+    if (!name || !rollNumber) {
+        alert("Name and Roll Number are required!");
+        return;
+    }
+
+    if (marksValue) {
+        const marks = Number(marksValue);
+        if (isNaN(marks) || marks < 0 || marks > 100) {
+            alert("Marks must be between 0 and 100");
+            return;
+        }
+    }
+
+    const student = {
+        name,
+        rollNumber,
+        branch,
+        marks: marksValue ? Number(marksValue) : undefined
+    };
+
+    await fetch("/api/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(student)
+    });
+
+    fetchStudents();
+
+    document.getElementById("name").value = "";
+    document.getElementById("roll").value = "";
+    document.getElementById("branch").value = "";
+    document.getElementById("marks").value = "";
+}
+
+async function deleteStudent(id) {
+    await fetch(`/api/students/${id}`, { method: "DELETE" });
+    fetchStudents();
+}
+
+fetchStudents();
+</script>
+
+</body>
+</html>
